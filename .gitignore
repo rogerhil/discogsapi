@@ -1,0 +1,14 @@
+*~
+*.pyc
+*.DS_Store
+*.egg-info
+*.log
+*.so
+.coverage
+MANIFEST
+build/
+dist/
+.tox/
+.idea/
+venv/
+
