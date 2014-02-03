@@ -25,10 +25,11 @@ from discogsapi.category.categories import Database
 class Label(EntityResource):
     """ This class wraps the Label details coming from Discogs API
 
-    >>> from discogs import Discogs
+    >>> from discogsapi import Discogs
     >>> discogs = Discogs("HeyBaldock/1.0 +http://heybaldock.com.br")
     >>> labels_resource = LabelsResource(discogs)
-    >>> label = Label(labels_resource, 45)
+    >>> data = labels_resource.get_data(45)
+    >>> label = Label(labels_resource, data)
     >>> label
     <Label: Groovin' Records>
     """
@@ -49,13 +50,14 @@ class LabelsResource(Resource):
     def get(self, id):
         """ Returns the Label details, a Label EntityResource.
 
-        >>> from discogs import Discogs
+        >>> from discogsapi import Discogs
         >>> discogs = Discogs("HeyBaldock/1.0 +http://heybaldock.com.br")
         >>> labels_resource = LabelsResource(discogs)
         >>> labels_resource.get(45)
         <Label: Groovin' Records>
         """
-        return Label(self, id)
+        data = self.get_data(45)
+        return Label(self, data)
 
 
 if __name__ == "__main__":

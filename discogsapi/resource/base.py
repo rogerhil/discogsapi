@@ -17,6 +17,8 @@
 """ Base module for all resources coming from Discogs API
 """
 
+import posixpath
+
 from discogsapi.category.base import Category, CategoryException
 
 
@@ -38,15 +40,25 @@ class Resource(object):
         self.discogs = discogs
         self.data = {}
 
-    def _get_response_from_resource(self, subpath, params=None):
-        """ The subpath can be anything after the resource.name.
-        e.g. resource=Artist, subpath = 12/releases -> /arttists/12/releases
+    def _get_response_from_resource(self, subpath_tuple, params=None):
+        """ The subpath_tuple can be anything after the resource.name.
+        e.g. resource=Artist,
+             subpath = ('12', 'releases') -> /artists/12/releases
         It retrieves an addinfourl object response.
         """
-        path = "/%s/%s" % (self.name, subpath)
+        path = self.__path_from_subpath_tuple(subpath_tuple)
         return self.discogs.get_response(path, params)
 
-    def _get_data_from_resource(self, subpath='', params=None):
+    def __path_from_subpath_tuple(self, subpath_tuple):
+        subpath = ''
+        if subpath_tuple:
+            if not hasattr(subpath_tuple, '__iter__'):
+                subpath_tuple = (subpath_tuple,)
+            subpath = posixpath.join(*subpath_tuple)
+        subpath = "/%s" % subpath if subpath else ''
+        return "/%s%s" % (self.name, subpath)
+
+    def _get_data_from_resource(self, subpath_tuple=None, params=None):
         """ The subpath can be anything after the resource.name.
         e.g. resource=Artist, subpath = 12/releases -> /arttists/12/releases
         It returns a dict data, previously parsed from a JSON through the
@@ -55,13 +67,13 @@ class Resource(object):
         category = self.category
         if category not in Category.categories():
             raise CategoryException("There's no category %s" % category)
-        subpath = "/%s" % subpath if subpath else ''
-        path = "/%s%s" % (self.name, subpath)
+        path = self.__path_from_subpath_tuple(subpath_tuple)
         return self.discogs.get_data(path, params)
 
-    def get_data(self, subpath='', params=None):
-        """ The subpath can be anything after the resource.name.
-        e.g. resource=Artist, subpath = 12/releases -> /arttists/12/releases
+    def get_data(self, subpath_tuple=None, params=None):
+        """ The subpath_tuple can be anything after the resource.name.
+        e.g. resource=Artist,
+             subpath_tuple = ('12', 'releases') -> /artists/12/releases
         It returns a dict data, previously parsed from a JSON through the
         Discogs API call.
 
@@ -79,10 +91,10 @@ class Resource(object):
         >>> data.has_key('profile')
         True
         """
-        self.data = self._get_data_from_resource(subpath, params)
+        self.data = self._get_data_from_resource(subpath_tuple, params)
         return self.data
 
-    def get_response(self, subpath='', params=None):
+    def get_response(self, subpath_tuple=None, params=None):
         """ The subpath can be anything after the resource.name.
         e.g. resource=Artist, subpath = 12/releases -> /arttists/12/releases
         It retrieves an addinfourl object response.
@@ -99,7 +111,7 @@ class Resource(object):
         >>> hasattr(response, 'read')
         True
         """
-        return self._get_response_from_resource(subpath, params)
+        return self._get_response_from_resource(subpath_tuple, params)
 
 if __name__ == "__main__":
     import doctest

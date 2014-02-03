@@ -21,7 +21,7 @@ from discogsapi.resource.base import Resource
 from discogsapi.resource.entity import EntityResource
 from discogsapi.category.categories import Database
 from discogsapi.resource.database.release import Releases
-
+from discogsapi.resource.database.image import Image, ImageResource
 
 class Artist(EntityResource):
     """ This class wraps an Artist details coming from Discogs API
@@ -30,18 +30,24 @@ class Artist(EntityResource):
     def __unicode__(self):
         return u'Artist: %s' % self.name
 
+    def __init__(self, *args, **kwargs):
+        super(Artist, self).__init__(*args, **kwargs)
+        imgr = ImageResource(self.resource.discogs)
+        self.images = [Image(imgr, data=i) for i in self.images]
+
     def releases(self):
         """ Retrieves an EntityResourceGenerator containing the artist's
         releases, wrapped as Artist EntityResource.
         NOTE: This method returns just the result of get_releases method of
         the ArtistsResource class.
 
-        >>> from discogs import Discogs
+        >>> from discogsapi import Discogs
         >>> discogs = Discogs("HeyBaldock/1.0 +http://heybaldock.com.br")
         >>> artists_resource = ArtistsResource(discogs)
-        >>> artist = Artist(artists_resource, 45)
+        >>> data = artists_resource.get_data(45)
+        >>> artist = Artist(artists_resource, data)
         >>> artist.releases()
-        <release.Releases Generator: [<Release: Analog Bubblebath Vol 2>, <Release: Analogue Bubblebath>, <Release: Digeridoo>, '...']>
+        <Releases Generator: [<Release: Analog Bubblebath Vol 2>, <Release: Analogue Bubblebath>, <Release: Digeridoo>, '...']>
         """
         return ArtistsResource(self.resource.discogs).get_releases(self.id)
 
@@ -58,7 +64,7 @@ class ArtistsResource(Resource):
     def get(self, id):
         """ Returns an artist details, an Artist EntityResource.
 
-        >>> from discogs import Discogs
+        >>> from discogsapi import Discogs
         >>> discogs = Discogs("HeyBaldock/1.0 +http://heybaldock.com.br")
         >>> artists_resource = ArtistsResource(discogs)
         >>> artist = artists_resource.get(45)
@@ -67,17 +73,18 @@ class ArtistsResource(Resource):
         >>> artist.namevariations
         ['A-F-X Twin', 'A.F.X.', 'A.Twin', 'AFX', 'Apex Twin', 'Aphex Twin, The', 'Aphex Twins', 'TheAphexTwin']
         """
-        return Artist(self, id)
+        data = self.get_data(45)
+        return Artist(self, data)
 
     def get_releases(self, id):
         """ Returns artist's releases, an EntityResourceGenerator with Releases
         EntityResources.
 
-        >>> from discogs import Discogs
+        >>> from discogsapi import Discogs
         >>> discogs = Discogs("HeyBaldock/1.0 +http://heybaldock.com.br")
         >>> artists_resource = ArtistsResource(discogs)
         >>> artists_resource.get_releases(45)
-        <release.Releases Generator: [<Release: Analog Bubblebath Vol 2>, <Release: Analogue Bubblebath>, <Release: Digeridoo>, '...']>
+        <Releases Generator: [<Release: Analog Bubblebath Vol 2>, <Release: Analogue Bubblebath>, <Release: Digeridoo>, '...']>
         """
         return Releases(self, id, "releases")
 

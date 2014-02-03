@@ -24,7 +24,7 @@ from discogsapi.category.categories import Database
 
 class Image(ImageEntityResource):
     """ Class for the Image Entity Resource
-    >>> from discogs import Discogs
+    >>> from discogsapi import Discogs
     >>> discogs = Discogs("HeyBaldock/1.0 +http://heybaldock.com.br")
     >>> image_resource = ImageResource(discogs)
     >>> image = Image(image_resource, 'R-150-63114-1148806222.jpeg')
@@ -50,7 +50,7 @@ class ImageResource(Resource):
     def get(self, filename):
         """ Returns a Image based on ImageEntityResource with the response
         containg the image data.
-        >>> from discogs import Discogs
+        >>> from discogsapi import Discogs
         >>> discogs = Discogs("HeyBaldock/1.0 +http://heybaldock.com.br")
         >>> image_resource = ImageResource(discogs)
         >>> image = image_resource.get('R-150-63114-1148806222.jpeg')

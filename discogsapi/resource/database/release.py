@@ -20,18 +20,25 @@
 from discogsapi.resource.base import Resource
 from discogsapi.resource.entity import EntityResource, EntityResourceGenerator
 from discogsapi.category.categories import Database
-
+from discogsapi.resource.database.image import Image, ImageResource
 
 class Release(EntityResource):
     """ This class wraps a Release details coming from Discogs API
 
-    >>> from discogs import Discogs
+    >>> from discogsapi import Discogs
     >>> discogs = Discogs("HeyBaldock/1.0 +http://heybaldock.com.br")
     >>> releases_resource = ReleasesResource(discogs)
-    >>> release = Release(releases_resource, 45)
+    >>> data = releases_resource.get_data(45)
+    >>> release = Release(releases_resource, data)
     >>> release
     <Release: Push Along EP>
     """
+
+    def __init__(self, *args, **kwargs):
+        super(Release, self).__init__(*args, **kwargs)
+        imgr = ImageResource(self.resource.discogs)
+        data = {'resource_url': self.thumb}
+        self.thumb = Image(imgr, data=data)
 
     def __unicode__(self):
         return u'Release: %s' % self.title
@@ -40,13 +47,13 @@ class Release(EntityResource):
 class Releases(EntityResourceGenerator):
     """ This is a generator class for Release entities items.
 
-    >>> from discogs import Discogs
-    >>> from resource.database.artist import ArtistsResource
+    >>> from discogsapi import Discogs
+    >>> from discogsapi.resource.database.artist import ArtistsResource
     >>> discogs = Discogs("HeyBaldock/1.0 +http://heybaldock.com.br")
     >>> artists_resource = ArtistsResource(discogs)
     >>> releases = Releases(artists_resource, 45, 'releases')
     >>> releases
-    <__main__.Releases Generator: [<Release: Analog Bubblebath Vol 2>, <Release: Analogue Bubblebath>, <Release: Digeridoo>, '...']>
+    <Releases Generator: [<Release: Analog Bubblebath Vol 2>, <Release: Analogue Bubblebath>, <Release: Digeridoo>, '...']>
     """
     item_class = Release
 
@@ -63,13 +70,14 @@ class ReleasesResource(Resource):
     def get(self, id):
         """ Returns the Release details as a Release entity.
 
-        >>> from discogs import Discogs
+        >>> from discogsapi import Discogs
         >>> discogs = Discogs("HeyBaldock/1.0 +http://heybaldock.com.br")
         >>> releases_resource = ReleasesResource(discogs)
         >>> releases_resource.get(45)
         <Release: Push Along EP>
         """
-        return Release(self, id)
+        data = self.get_data(id)
+        return Release(self, data)
 
 if __name__ == "__main__":
     import doctest

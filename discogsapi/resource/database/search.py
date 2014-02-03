@@ -33,7 +33,7 @@ class SearchResource(Resource):
     def query(self, params):
         """ Returns details of a search through the queries params
 
-        >>> from discogs import Discogs
+        >>> from discogsapi import Discogs
         >>> discogs = Discogs("HeyBaldock/1.0 +http://heybaldock.com.br")
         >>> search_resource = SearchResource(discogs)
         >>> results = search_resource.query(dict(q='The Beatles',

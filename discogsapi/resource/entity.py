@@ -18,7 +18,16 @@
     Each item from Discogs resources is wrapped into a EntityResource object.
 """
 
+import os
+
+from discogsapi.ratelimit import RateLimit
+
+
 class EntityResourceException(Exception):
+    pass
+
+
+class EntityImageException(Exception):
     pass
 
 
@@ -26,7 +35,7 @@ class EntityResource(object):
     """ Base class for EntityResource.
     Each item from Discogs resources is wrapped into a EntityResource object.
 
-    >>> from discogs import Discogs
+    >>> from discogsapi import Discogs
     >>> from category.categories import Database
     >>> from resource.database.artist import Resource
     >>> discogs = Discogs("HeyBaldock/1.0 +http://heybaldock.com.br")
@@ -40,13 +49,13 @@ class EntityResource(object):
     'Aphex Twin'
     """
 
-    def __init__(self, resource, id=None, subpath='',data=None):
+    def __init__(self, resource, data=None):
         self.resource = resource
-        if not data:
-            subpath = "/%s" % subpath if subpath else ''
-            data = self.resource.get_data('%s%s' % (id, subpath))
         for key, value in data.items():
-            setattr(self, key, value)
+            if hasattr(self, key):
+                setattr(self, "_%s_data" % key, value)
+            else:
+                setattr(self, key, value)
 
     def __unicode__(self):
         return u'EntityResource: %s' % self.resource.name
@@ -72,7 +81,7 @@ class EntityResourceGeneratorPagination(EntityResource):
             next: api url for the next page
             last: api url for the last page
 
-    >>> from discogs import Discogs
+    >>> from discogsapi import Discogs
     >>> from category.categories import Database
     >>> from resource.database.artist import Resource
     >>> discogs = Discogs("HeyBaldock/1.0 +http://heybaldock.com.br")
@@ -118,7 +127,7 @@ class EntityResourceGenerator:
     """
     item_class = None
 
-    def __init__(self, resource, id, key_list=None):
+    def __init__(self, resource, id, key_list=None, subpath=None):
         self.resource = resource
         self.key_list = key_list
         self.index = 0
@@ -126,12 +135,14 @@ class EntityResourceGenerator:
         if not self.item_class:
             raise EntityResourceException('item_class must be set in the '
                                           'subclass of and EntityResource')
-        data = self.resource.get_data("%s/%s" % (id, key_list))
+        if not subpath:
+            subpath = key_list
+        data = self.resource.get_data((id, subpath))
         self._set_data(data)
 
     def __unicode__(self):
         entities = self.entities[:3] + ['...']
-        return u'%s Generator: %s' % (self.__class__, entities)
+        return u'%s Generator: %s' % (self.__class__.__name__, entities)
 
     def __str__(self):
         return self.__unicode__().encode('utf-8')
@@ -179,10 +190,16 @@ class ImageEntityResource(object):
     response of the image.
     """
 
-    def __init__(self, resource, filename=None):
+    def __init__(self, resource, filename=None, data=None):
         self.resource = resource
         self.filename = filename
-        self.response = resource.get_response(filename)
+        self._response = None
+        self._content = None
+        data = data if data else {}
+        for key, value in data.items():
+            setattr(self, key, value)
+        if data:
+            self.filename = self.resource_url.split('/')[-1]
 
     def __str__(self):
         return self.__unicode__().encode('utf-8')
@@ -190,6 +207,25 @@ class ImageEntityResource(object):
     def __repr__(self):
         return "<%s>" % self.__str__()
 
+    @property
+    def response(self):
+        if not self._response:
+            self._response = self.resource.get_response(self.filename)
+            RateLimit.test_limit_and_increment()
+        return self._response
+
+    @property
+    def content(self):
+        if not self._content:
+            self._content = self.response.read()
+        return self._content
+
+    def save(self, path):
+        if not os.path.isdir(path):
+            raise EntityImageException("No such directory %s" % path)
+        afile = open(os.path.join(path, self.filename), 'w')
+        afile.write(self.content)
+        afile.close()
 
 if __name__ == "__main__":
     import doctest

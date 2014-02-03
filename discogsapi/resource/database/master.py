@@ -24,10 +24,11 @@ from discogsapi.category.categories import Database
 
 class Master(EntityResource):
     """ This class wraps a Master details coming from Discogs API
-        >>> from discogs import Discogs
+        >>> from discogsapi import Discogs
         >>> discogs = Discogs("HeyBaldock/1.0 +http://heybaldock.com.br")
         >>> masters_resource = MastersResource(discogs)
-        >>> master = Master(masters_resource, 8471)
+        >>> data = masters_resource.get_data(8471)
+        >>> master = Master(masters_resource, data)
         >>> master
         <Master: Back In Black>
     """
@@ -48,13 +49,14 @@ class MastersResource(Resource):
     def get(self, id):
         """ Returns the Master details, a Master EntityResource.
 
-        >>> from discogs import Discogs
+        >>> from discogsapi import Discogs
         >>> discogs = Discogs("HeyBaldock/1.0 +http://heybaldock.com.br")
         >>> masters_resource = MastersResource(discogs)
         >>> masters_resource.get(8471)
         <Master: Back In Black>
         """
-        return Master(self, id)
+        data = self.get_data(8471)
+        return Master(self, data)
 
 if __name__ == "__main__":
     import doctest
